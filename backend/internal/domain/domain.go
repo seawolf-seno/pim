@@ -96,6 +96,33 @@ type Account struct {
 	Alias string `json:"alias,omitempty"`
 }
 
+// Presence values: how available a buddy says they are. A service with
+// more shades (XMPP's "extended away", "free to chat") maps them onto these.
+const (
+	PresenceAvailable = "available"
+	PresenceAway      = "away"
+	PresenceBusy      = "busy"
+	PresenceOffline   = "offline"
+)
+
+// Buddy is a contact on an account's buddy list, as a service with
+// presence keeps one: the groups it is listed under and how available
+// it last said it was. Buddies live only in memory: presence means
+// nothing once the account disconnects.
+type Buddy struct {
+	AccountID string   `json:"accountId"`
+	RemoteID  string   `json:"remoteId"`
+	Name      string   `json:"name"`
+	Groups    []string `json:"groups"`
+
+	// Show is one of the Presence values.
+	Show string `json:"show"`
+
+	// Status is the buddy's own away message, or "" for none. It is
+	// sender-controlled, so it is capped like a display name.
+	Status string `json:"status,omitempty"`
+}
+
 // Contact is a person the account can start a conversation with.
 type Contact struct {
 	AccountID string `json:"accountId"`

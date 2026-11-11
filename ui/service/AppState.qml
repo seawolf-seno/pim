@@ -1,4 +1,5 @@
 import QtQuick
+import "../lib/Buddies.js" as Buddies
 
 // Cross-panel state that must survive the panel being destroyed when
 // Omarchy hides it: the accounts the helper reported, any sign-in in
@@ -9,6 +10,10 @@ QtObject {
 
   // accounts is the signed-in accounts the helper reported.
   property var accounts: []
+
+  // buddies is every account's buddy list, from services with presence:
+  // filled by buddies.list, kept current by buddy.updated.
+  property var buddies: []
 
   // unreadTotal is the unread count shown on the bar widget.
   property int unreadTotal: 0
@@ -85,7 +90,15 @@ QtObject {
   // waiting on.
   function applyAccountRemoved(data: var): void {
     root.accounts = root.accounts.filter((a) => a.id !== data.accountId);
+    root.buddies = Buddies.withoutAccount(root.buddies, data.accountId);
     root._clearPendingAuth(data.accountId);
+  }
+
+  // applyBuddy records a buddy's latest groups and presence.
+  function applyBuddy(buddy: var): void {
+    if (!buddy || typeof buddy.accountId !== "string" || typeof buddy.remoteId !== "string") return;
+
+    root.buddies = Buddies.upsert(root.buddies, buddy);
   }
 
   // applyAuthStep records the sign-in step an account is waiting on.

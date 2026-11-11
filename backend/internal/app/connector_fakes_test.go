@@ -267,3 +267,20 @@ func (l *fakeLimiter) AttachmentLimit(accountID, kind string) (int64, bool) {
 
 	return limit, ok
 }
+
+// fakeStatusSetter records each status asked of it, as
+// "account show status", and fails with err when set.
+type fakeStatusSetter struct {
+	mu  sync.Mutex
+	set []string
+	err error
+}
+
+func (s *fakeStatusSetter) SetStatus(_ context.Context, accountID, show, status string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.set = append(s.set, accountID+" "+show+" "+status)
+
+	return s.err
+}

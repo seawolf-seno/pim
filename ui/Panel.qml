@@ -164,7 +164,9 @@ Item {
       return true;
     }
 
-    const controllers = [listController, conversationController, composerController, photoViewerController,
+    // The buddy controller goes first: while the buddy list shows, it takes
+    // over the list's cursor and open keys.
+    const controllers = [buddyController, listController, conversationController, composerController, photoViewerController,
       reactionsController, pollsController, deleteController, dialogController, accountController, windowController];
     const owner = controllers.find((c) => c.handles(action));
     if (!owner) return false;
@@ -347,6 +349,14 @@ Item {
     service: root.service
   }
 
+  BuddyController {
+    id: buddyController
+    objectName: "buddyController"
+    service: root.service
+
+    onOpened: (conversation) => conversationController.open(conversation)
+  }
+
   ScheduledController {
     id: scheduledController
     service: root.service
@@ -493,6 +503,7 @@ Item {
           accountController: accountController
           windowController: windowController
           scheduledController: scheduledController
+          buddyController: buddyController
           bindings: root.bindings
           routeKey: root.routeKey
           focusDefault: () => keyArea.forceActiveFocus()

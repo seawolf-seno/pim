@@ -32,6 +32,7 @@ var BINDINGS = [
   { action: 'list.unread', keys: ['Ctrl+Shift+A'], contexts: ['global'], label: 'Show unread conversations', command: true },
   { action: 'search.focus', keys: ['Ctrl+G'], contexts: ['global'], label: 'Search messages', command: true },
   { action: 'chat.new', keys: ['Ctrl+N', 'Ctrl+Shift+K'], contexts: ['global'], label: 'New message', hint: true, command: true },
+  { action: 'buddies.toggle', keys: ['Ctrl+B'], contexts: ['global'], label: 'Show or hide the buddy list', command: true },
   // compose's own Ctrl+J binding wins while writing, so this only fires outside the composer.
   { action: 'unread.next', keys: ['Ctrl+J', 'Alt+Shift+Down'], contexts: ['global'], label: 'Next unread conversation', command: true },
   { action: 'unread.prev', keys: ['Alt+Shift+Up'], contexts: ['global'], label: 'Previous unread conversation', command: true },
@@ -46,6 +47,7 @@ var BINDINGS = [
   { action: 'rail.all', keys: ['Ctrl+0'], contexts: ['global'], label: 'Show all services', command: true },
   { action: 'rail.whatsapp', keys: ['Ctrl+1'], contexts: ['global'], label: 'Show WhatsApp', command: true },
   { action: 'rail.telegram', keys: ['Ctrl+2'], contexts: ['global'], label: 'Show Telegram', command: true },
+  { action: 'rail.xmpp', keys: ['Ctrl+3'], contexts: ['global'], label: 'Show XMPP', command: true },
   { action: 'rail.next', keys: ['Ctrl+Tab'], contexts: ['global'], label: 'Next account or service', command: true },
   { action: 'rail.prev', keys: ['Ctrl+Shift+Tab'], contexts: ['global'], label: 'Previous account or service', command: true },
   { action: 'window.hide', keys: ['Ctrl+W'], contexts: ['global'], label: 'Close window', command: true },

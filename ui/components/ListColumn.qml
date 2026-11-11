@@ -46,6 +46,12 @@ ColumnLayout {
   // routeKey is forwarded to the search field; see Composer.qml for why
   // a key router intercepts through a function property, not a signal.
   property var routeKey: null
+  // buddyMode shows the buddy list in place of the conversation list.
+  property bool buddyMode: false
+  // buddyRows are the buddy list's rows (see Buddies.rows).
+  property var buddyRows: []
+  // buddySelectedKey is the buddy list's cursor row, by key.
+  property string buddySelectedKey: ""
   // windowActive is whether the window is shown and focused. The search
   // field exists only while this is true, to avoid an unfocused window
   // keeping a live clipboard sink open (see docs/decisions.md).
@@ -78,6 +84,8 @@ ColumnLayout {
   signal queryEdited(string text)
   // activated reports a row the user picked to open.
   signal activated(string id)
+  // buddyActivated reports a buddy list row the user picked.
+  signal buddyActivated(string key)
   // pinReordered reports a pinned row dropped after a drag, naming
   // where it landed (see ConversationList.pinDropped).
   signal pinReordered(string id, int toIndex)
@@ -221,6 +229,7 @@ ColumnLayout {
     id: list
     Layout.fillWidth: true
     Layout.fillHeight: true
+    visible: !root.buddyMode
 
     model: root.model
     selectedId: root.selectedId
@@ -235,12 +244,24 @@ ColumnLayout {
     onPinDropped: (id, toIndex) => root.pinReordered(id, toIndex)
   }
 
+  BuddyList {
+    objectName: "buddyList"
+    Layout.fillWidth: true
+    Layout.fillHeight: true
+    visible: root.buddyMode
+
+    rows: root.buddyRows
+    selectedKey: root.buddySelectedKey
+
+    onActivated: key => root.buddyActivated(key)
+  }
+
   // Chats the standard list folds away (older than a month, hidden by the
   // user, or archived with the service) stay out of sight until asked for.
   RowLayout {
     objectName: "showAllRow"
     Layout.fillWidth: true
-    visible: !root.unreadView && (root.hiddenCount > 0 || (root.showAll && root.query === ""))
+    visible: !root.buddyMode && !root.unreadView && (root.hiddenCount > 0 || (root.showAll && root.query === ""))
     spacing: Theme.spacing.sm
 
     Text {

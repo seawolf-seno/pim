@@ -9,10 +9,11 @@ OmaMessenger is keyboard-first; every action also works with the mouse. **Ctrl+/
 | Ctrl+/ or Ctrl+Shift+P | Command palette |
 | Ctrl+K, Ctrl+T or Ctrl+G | Jump to a conversation or search messages, in one palette |
 | Ctrl+N or Ctrl+Shift+K | New message |
+| Ctrl+B | Show or hide the buddy list (XMPP accounts): buddies grouped by class or group, online first, then Offline. j/k move, Enter opens a chat or folds a group |
 | Ctrl+J, Alt+Shift+↓ / ↑ | Next / previous unread conversation (works from the list, an open conversation or the unread view, and keeps whichever mode you were in: writing stays writing, scrolling stays scrolling). Ctrl+J inserts a new line instead while writing (see Open conversation); Alt+Shift+↓ / ↑ still jump from there |
 | Ctrl+Shift+A | Show only unread conversations, across every service and account (Esc or the same shortcut returns to the previous list) |
 | Alt+↓ / ↑ | Next / previous conversation (same as above: works from any mode and keeps it) |
-| Ctrl+0 / 1 / 2 | All / WhatsApp / Telegram |
+| Ctrl+0 / 1 / 2 / 3 | All / WhatsApp / Telegram / XMPP |
 | Ctrl+Tab, Ctrl+Shift+Tab | Next / previous account or service |
 | Ctrl+W | Close the window (asks whether to keep running) |
 | Ctrl+Q | Quit |

@@ -63,6 +63,7 @@ func (c *Commands) RemoveAccount(ctx context.Context, accountID string) error {
 		return err
 	}
 
+	c.buddies.forget(accountID)
 	c.events.publish(ctx, EventAccountRemoved, AccountRemoved{AccountID: accountID})
 	if after := c.events.unreadTotal(ctx); after != before {
 		c.events.publish(ctx, EventUnreadChanged, c.events.unreadChanged(ctx, after))

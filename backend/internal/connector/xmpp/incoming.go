@@ -26,7 +26,7 @@ func (c *Connector) handle(ctx context.Context, d *xml.Decoder, start xml.StartE
 	case "presence":
 		var p inPresence
 		if err := d.DecodeElement(&p, &start); err == nil {
-			c.onPresence(p)
+			c.onPresence(ctx, p)
 		}
 	case "iq":
 		var iq inIQ
@@ -211,10 +211,21 @@ func roomMessage(m inMessage, title string, own bool) domain.Message {
 	return msg
 }
 
-// onPresence records the account's own nickname in a room from the room's
-// self-presence: a school server renames everyone to their school name, so
-// the nickname asked for may not be the one given.
-func (c *Connector) onPresence(p inPresence) {
+// onPresence routes a presence: a room's (only its self-presence matters,
+// for the account's own nickname) or a buddy's.
+func (c *Connector) onPresence(ctx context.Context, p inPresence) {
+	if p.User == nil {
+		c.onBuddyPresence(ctx, p)
+
+		return
+	}
+	c.onRoomSelfPresence(p)
+}
+
+// onRoomSelfPresence records the account's own nickname in a room from the
+// room's self-presence: a school server renames everyone to their school
+// name, so the nickname asked for may not be the one given.
+func (c *Connector) onRoomSelfPresence(p inPresence) {
 	if !p.isSelf() {
 		return
 	}

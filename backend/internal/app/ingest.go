@@ -36,6 +36,7 @@ type Ingest struct {
 	ui         *uiState
 	retries    *retrier
 	limiter    AttachmentLimiter
+	buddies    *buddyList
 
 	mu            sync.Mutex
 	pendingRead   *time.Timer
@@ -98,7 +99,10 @@ func (in *Ingest) AccountStatus(ctx context.Context, accountID, status, detail s
 
 	if status == domain.AccountConnected {
 		in.retries.accountReconnected(accountID)
+
+		return
 	}
+	in.buddiesOffline(ctx, accountID)
 }
 
 // Contact records a contact. Name is sender-controlled - a service's

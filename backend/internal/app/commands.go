@@ -40,6 +40,8 @@ type Commands struct {
 	editor          Editor
 	blocker         Blocker
 	spamReporter    SpamReporter
+	status          StatusSetter
+	buddies         *buddyList
 	members         MemberLister
 	limiter         AttachmentLimiter
 	outgoing        OutgoingMedia

@@ -45,15 +45,22 @@ type Connector struct {
 	running atomic.Bool
 
 	// mu guards the fields below, which belong to the current run.
-	mu      sync.Mutex
-	link    link
-	sink    connector.Sink
-	self    string            // the account's own bare address
-	names   map[string]string // roster names by bare address
-	rooms   map[string]string // joined rooms' titles by room address
-	nicks   map[string]string // the account's own nickname in each room
-	direct  map[string]bool   // direct conversations already reported
-	pending map[string]string // stanza id of a sent message -> its local id
+	mu       sync.Mutex
+	link     link
+	sink     connector.Sink
+	self     string                   // the account's own bare address
+	names    map[string]string        // roster names by bare address
+	groups   map[string][]string      // roster groups by bare address
+	presence map[string]buddyPresence // roster contacts' presence by bare address
+	rooms    map[string]string        // joined rooms' titles by room address
+	nicks    map[string]string        // the account's own nickname in each room
+	direct   map[string]bool          // direct conversations already reported
+	pending  map[string]string        // stanza id of a sent message -> its local id
+
+	// ownShow and ownStatus are the account's own availability and away
+	// message (SetStatus), kept across runs so a reconnect announces them.
+	ownShow   string
+	ownStatus string
 }
 
 var (
@@ -146,6 +153,8 @@ func (c *Connector) begin(l link, sink connector.Sink, self string) {
 
 	c.link, c.sink, c.self = l, sink, self
 	c.names = map[string]string{}
+	c.groups = map[string][]string{}
+	c.presence = map[string]buddyPresence{}
 	c.rooms = map[string]string{}
 	c.nicks = map[string]string{}
 	c.direct = map[string]bool{}
@@ -166,7 +175,7 @@ func (c *Connector) start(ctx context.Context, l link) error {
 	if err := c.fetchRoster(ctx, l); err != nil {
 		return err
 	}
-	if err := l.send(ctx, outPresence{}); err != nil {
+	if err := l.send(ctx, c.ownPresence()); err != nil {
 		return err
 	}
 
@@ -192,32 +201,36 @@ func request(ctx context.Context, l link, iq outIQ, result any) error {
 	return l.request(ctx, iq, result)
 }
 
-// addContacts records roster items' names and reports them as contacts. An
-// item being removed from the roster only forgets its name: the store keeps
-// the contact for its existing conversations.
+// addContacts records roster items' names and groups, and reports each
+// as a contact and a buddy. An item removed from the roster forgets its
+// name and groups (the store keeps the contact for its conversations)
+// and is reported as an offline buddy with no groups.
 func (c *Connector) addContacts(ctx context.Context, items []rosterItem) {
 	for _, item := range items {
 		address := bare(item.JID)
 		if address == "" {
 			continue
 		}
-		name := item.Name
+		removed, name := item.Subscription == "remove", item.Name
 		if name == "" {
 			name = address
 		}
 
 		c.mu.Lock()
-		if item.Subscription == "remove" {
+		if removed {
 			delete(c.names, address)
+			delete(c.groups, address)
+			delete(c.presence, address)
 		} else {
-			c.names[address] = name
+			c.names[address], c.groups[address] = name, item.Groups
 		}
 		sink := c.sink
 		c.mu.Unlock()
 
-		if item.Subscription != "remove" && sink != nil {
+		if !removed && sink != nil {
 			sink.Contact(ctx, domain.Contact{AccountID: c.account.ID, RemoteID: address, Name: name})
 		}
+		c.reportBuddy(ctx, address)
 	}
 }
 

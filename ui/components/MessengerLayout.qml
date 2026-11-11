@@ -48,6 +48,8 @@ Item {
   // scheduledController owns queued "send later" messages, read for the
   // open conversation's own pending list.
   property var scheduledController: null
+  // buddyController owns the buddy list (shown in the list column).
+  property var buddyController: null
   // bindings are the effective key bindings (defaults merged with the
   // user's keys.conf overrides), passed to the list and conversation.
   property var bindings: Keymap.BINDINGS
@@ -245,6 +247,11 @@ Item {
       onAddAccountRequested: root.accountController.begin()
       onShowAllToggled: root.listController.setShowAll(!root.listController.showAll)
       onUnreadViewLeft: root.listController.setUnreadView(false)
+
+      buddyMode: root.buddyController !== null && root.buddyController.showing
+      buddyRows: root.buddyController ? root.buddyController.rows : []
+      buddySelectedKey: root.buddyController ? root.buddyController.selectedKey : ""
+      onBuddyActivated: key => { if (root.buddyController) root.buddyController.activate(key); }
     }
 
     ConversationView {

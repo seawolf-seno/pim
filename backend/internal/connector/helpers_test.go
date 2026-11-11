@@ -294,3 +294,16 @@ func wantDims(t *testing.T, width, height, wantWidth, wantHeight int) {
 		t.Errorf("dimensions = %dx%d, want %dx%d", width, height, wantWidth, wantHeight)
 	}
 }
+
+// withStatusSetter is a connector whose service has presence, recording
+// each status it was asked to set.
+type withStatusSetter struct {
+	fakeConnector
+	statuses []string
+}
+
+func (c *withStatusSetter) SetStatus(_ context.Context, show, status string) error {
+	c.statuses = append(c.statuses, show+":"+status)
+
+	return nil
+}

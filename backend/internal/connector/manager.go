@@ -49,6 +49,10 @@ var ErrNoVoter = errors.New("connector does not support voting")
 // messages on its service.
 var ErrNoEditor = errors.New("connector does not support editing messages")
 
+// ErrNoStatusSetter reports a status asked of a connector whose
+// service has no presence.
+var ErrNoStatusSetter = errors.New("connector: service has no presence")
+
 // ErrNoBlocker reports a block or unblock asked of a connector that
 // cannot block contacts on its service.
 var ErrNoBlocker = errors.New("connector does not support blocking contacts")
@@ -439,6 +443,22 @@ func (m *Manager) SetBlocked(ctx context.Context, conv domain.Conversation, bloc
 	}
 
 	return blocker.SetBlocked(ctx, conv, blocked)
+}
+
+// SetStatus asks the account's connector to set the account's own
+// availability and away message, if its service has presence.
+func (m *Manager) SetStatus(ctx context.Context, accountID, show, status string) error {
+	c, err := m.connectorFor(accountID)
+	if err != nil {
+		return err
+	}
+
+	setter, ok := c.(StatusSetter)
+	if !ok {
+		return fmt.Errorf("connector: %w: %q", ErrNoStatusSetter, accountID)
+	}
+
+	return setter.SetStatus(ctx, show, status)
 }
 
 // ReportSpam asks the conversation's connector to report it as spam

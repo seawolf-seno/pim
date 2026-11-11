@@ -2445,3 +2445,17 @@ The fork adds `backend/internal/connector/xmpp`, so an account on an XMPP server
 **A refused password is not retried.** mellium reports a SASL refusal with an internal error type, so `signIn` wraps its SASL feature's negotiation and turns any error from that step that is not about the connection into `errSignIn`. `Run` then reports `needs-auth` and waits for cancellation, rather than returning and letting the supervisor send a wrong password to the server every few seconds.
 
 **What the connector does not do yet.** Text only (`AttachmentLimit` is zero, so the composer offers no attachments); no read markers (`MarkRead` is a no-op, so reading tells no one); no presence reported to the UI. History on joining a room arrives as `History`; one-to-one messages held while offline arrive as `Incoming`, since they are new to the user. A room's own echo of the account's message marks it delivered; a one-to-one message is delivered on its XEP-0184 receipt; an error reply marks a message failed (a school server refuses a student's room post while class chat is closed).
+
+## A buddy list for services with presence
+
+XMPP accounts (a school's own server) carry presence: who is online, away or busy, and an away message. The buddy list shows it, AIM style, in place of the conversation list while it is on (Ctrl+B, or "Show or hide the buddy list" in the command palette).
+
+**Presence is a capability, not part of the boundary.** A connector that has presence reports `domain.Buddy` values through `connector.BuddyReporter`, an optional Sink interface like `SenderNamer`, and can set the account's own status through `connector.StatusSetter`, an optional Connector interface reached through `Manager.SetStatus`. Telegram and WhatsApp implement neither, so nothing about them changes, and their privacy stance (never reporting "online", see `docs/privacy.md`) is untouched.
+
+**Buddies live in memory only.** `app.buddyList` holds them by account; nothing is stored, because presence means nothing once an account disconnects, and an account that is no longer connected has every buddy marked offline (published as `buddy.updated`). Removing an account forgets its buddies. Names, group names and away messages are sender-controlled, so they get the display-name cap; a buddy is listed under at most 32 groups.
+
+**Grouping is AIM's.** `ui/lib/Buddies.js` lists each group's online buddies (available, then away, then busy, then by name), and gathers everyone offline once in an "Offline" group at the bottom; a buddy in several groups appears in each. Presence is a glyph (filled, half, barred or hollow circle) beside the name and away message, never colour alone.
+
+**The buddy controller borrows the list's keys while it shows.** `BuddyController` is asked first by the panel's key router: it always owns `buddies.toggle`, and owns the list's cursor and open actions (j/k, g/G, Enter) only while the buddy list is showing, so the conversation list's controller never moves a cursor nobody can see. Opening a buddy calls `conversations.open`, exactly as the new-chat dialog does.
+
+**Not built yet:** a command to set your own away message from the UI (the helper's `presence.set` exists); a school server may override it anyway, showing a whole class away while it is in session.

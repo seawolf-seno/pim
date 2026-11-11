@@ -19,6 +19,8 @@ The protocol version is `4`.
 | `accounts.setAlias` | `{accountId, alias}` | `Account`; saves the display name the user chose for the account, such as "Personal WhatsApp", shown instead of its plain name wherever it is identified. An empty `alias` clears it, falling back to the plain name again |
 | `auth.submit` | `{accountId, step, value}` | `{}`; answers an `auth.step`: `phone`, `code` or `password` |
 | `contacts.list` | `{accountId, query}` | `[Contact]` |
+| `buddies.list` | | `[Buddy]`: every account's buddies, from services with presence (XMPP), sorted by account then name: `{accountId, remoteId, name, groups, show, status}`. `show` is `available`, `away`, `busy` or `offline`; `status` is the buddy's own away message, omitted when empty, capped like a display name. Kept in memory only: an account that disconnects reports its buddies `offline` |
+| `presence.set` | `{accountId, show, status}` | `{}`; sets the account's own availability (`available`, `away` or `busy`) and away message (`""` for none). Invalid params for any other show, an unknown account, or an account whose service has no presence. A school server may still override it, such as showing everyone in a class away while it is in session |
 | `contacts.block` | `{conversationId}` | `Conversation`; blocks the contact behind a direct conversation, through the service. Fails with invalid params for a group, or a service that refuses, such as one that offers no block API at all |
 | `contacts.unblock` | `{conversationId}` | `Conversation`; the reverse of `contacts.block` |
 | `conversations.list` | `{query}` | `[Conversation]`, newest first; `match` holds the newest matching message, and `matchMessageId`/`matchSender` identify it and who sent it, for a caller that wants to open and highlight that exact message rather than just the conversation (the unified command palette's "Messages" section). `blocked` is set once the contact behind a direct conversation has been blocked (see `contacts.block`); always `false` for a group. `notificationSound` is `"custom"` once a conversation has its own notification sound (see `conversations.setNotificationSound`), `""` (omitted) otherwise |
@@ -83,6 +85,7 @@ Events are JSON-RPC notifications: `{"jsonrpc":"2.0","method":"<event>","params"
 | `message.updated` | `Message`; also sent when the service reports a message edited, or its reactions changed |
 | `message.removed` | `{conversationId, messageId}`; sent when the service reports a message deleted |
 | `unread.changed` | `{total, byService}`; `byService` is `{whatsapp: N, telegram: N, …}`, a service omitted meaning zero |
+| `buddy.updated` | `Buddy` (see `buddies.list`), whenever a buddy's groups, name or presence change, including when its account disconnects and it goes `offline` |
 | `typing` | `{conversationId, name, active}`; `name` is set only in a group (a direct chat's single header has no room for one) |
 | `notification.clicked` | `{conversationId}`: the user clicked a desktop notification; the UI opens that conversation |
 | `scheduledMessage.added` | `ScheduledMessage`; a message was queued, through `messages.schedule` |

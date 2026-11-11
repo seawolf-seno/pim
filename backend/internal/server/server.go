@@ -46,9 +46,10 @@ func (s *Server) Start(ctx context.Context, rw io.ReadWriteCloser, commands *app
 	defer s.mu.Unlock()
 
 	s.methods = methods(commands, s.version)
-	// soundMethods lives apart from methods' own table literal so that
-	// growing it never pushes methods.go past its line length gate.
+	// soundMethods and buddyMethods live apart from methods' own table literal so that
+	// growing them never pushes methods.go past its line length gate.
 	maps.Copy(s.methods, soundMethods(commands))
+	maps.Copy(s.methods, buddyMethods(commands))
 	s.conn = jsonrpc2.NewConn(ctx, jsonrpc2.NewPlainObjectStream(rw), s, jsonrpc2.SetLogger(s.log))
 }
 

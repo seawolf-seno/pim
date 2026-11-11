@@ -115,7 +115,7 @@ func connect(t *testing.T, faked bool) *session {
 	deps := app.Deps{
 		Dispatcher: acceptAll{}, Notifier: silent{}, Accounts: accounts,
 		SignIn: acceptAll{}, Organizer: acceptAll{}, ArchiveUnpinner: acceptAll{}, Reactor: acceptAll{}, Voter: acceptAll{}, Deleter: acceptAll{}, Editor: acceptAll{}, Members: acceptAll{},
-		Blocker: acceptAll{}, SpamReporter: acceptAll{},
+		Blocker: acceptAll{}, Status: acceptAll{}, SpamReporter: acceptAll{},
 		Outgoing: cache.NewOutgoing(outgoingDir, 24*time.Hour, 1<<30, storeExists(db)), Clipboard: clipboard,
 		Sounds:         cache.NewSounds(filepath.Join(t.TempDir(), "sounds")),
 		FilePicker:     filePicker,
@@ -425,6 +425,7 @@ type acceptAll struct{}
 
 func (acceptAll) Send(context.Context, domain.Conversation, domain.Message) error { return nil }
 func (acceptAll) MarkRead(context.Context, domain.Conversation) error             { return nil }
+func (acceptAll) SetStatus(context.Context, string, string, string) error         { return nil }
 
 // SubmitAuth accepts any sign-in answer.
 func (acceptAll) SubmitAuth(context.Context, string, string, string) error { return nil }

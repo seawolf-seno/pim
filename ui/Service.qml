@@ -42,6 +42,9 @@ Item {
   // accounts is the signed-in accounts the helper reported.
   readonly property var accounts: appState.accounts
 
+  // buddies is every account's buddy list (see AppState).
+  readonly property var buddies: appState.buddies
+
   // services are the messaging services the helper can add an account
   // for, from hello. Empty for a helper too old to report them.
   readonly property var services: appState.services
@@ -260,6 +263,10 @@ Item {
         if (listError) return;
         appState.accounts = accounts;
       });
+      root.request("buddies.list", {}, function(buddiesError, buddies) {
+        if (buddiesError) return;
+        appState.buddies = buddies ?? [];
+      });
     });
   }
 
@@ -287,6 +294,7 @@ Item {
     else if (name === "account.notice") appState.applyAccountNotice(data);
     else if (name === "auth.step") appState.applyAuthStep(data);
     else if (name === "unread.changed") appState.applyUnreadChanged(data);
+    else if (name === "buddy.updated") appState.applyBuddy(data);
     else if (name === "notification.clicked") root._openOnNotificationClick(data);
     else if (name === "notification.sound") root._playNotificationSound(data);
 

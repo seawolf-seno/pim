@@ -130,9 +130,11 @@ func (e *stanzaError) condition() string {
 
 // inPresence is a <presence/> as it arrives from the server.
 type inPresence struct {
-	Type string   `xml:"type,attr"`
-	From string   `xml:"from,attr"`
-	User *mucUser `xml:"http://jabber.org/protocol/muc#user x"`
+	Type   string   `xml:"type,attr"`
+	From   string   `xml:"from,attr"`
+	Show   string   `xml:"show"`
+	Status string   `xml:"status"`
+	User   *mucUser `xml:"http://jabber.org/protocol/muc#user x"`
 }
 
 // mucUser is XEP-0045's room-specific presence extension.
@@ -273,11 +275,13 @@ type outMessage struct {
 	Received *receiptTag  `xml:"urn:xmpp:receipts received,omitempty"`
 }
 
-// outPresence is a <presence/> the client sends: its initial availability,
-// or a request to join a room.
+// outPresence is a <presence/> the client sends: its availability (with
+// an optional show and away message), or a request to join a room.
 type outPresence struct {
 	XMLName xml.Name  `xml:"jabber:client presence"`
 	To      string    `xml:"to,attr,omitempty"`
+	Show    string    `xml:"show,omitempty"`
+	Status  string    `xml:"status,omitempty"`
 	Join    *joinRoom `xml:"http://jabber.org/protocol/muc x,omitempty"`
 }
 

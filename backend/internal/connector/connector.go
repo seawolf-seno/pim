@@ -360,3 +360,22 @@ type PollUpdater interface {
 	// account and conversationRemoteID.
 	PollUpdated(ctx context.Context, accountID, conversationRemoteID, messageRemoteID string, poll domain.Poll)
 }
+
+// BuddyReporter is a Sink that can also keep a buddy list: a service
+// with presence (XMPP) reports each buddy's groups and availability
+// whenever either changes. Optional, like SenderNamer: a connector
+// type-asserts the Sink it was given and skips the report when it is
+// not implemented, such as by a test fake.
+type BuddyReporter interface {
+	// Buddy reports a buddy's whole current state, replacing what was
+	// reported for it before.
+	Buddy(ctx context.Context, b domain.Buddy)
+}
+
+// StatusSetter is a Connector that can set the account's own
+// availability and away message, as a buddy list shows it to others.
+type StatusSetter interface {
+	// SetStatus sets the account's own show (a domain.Presence value
+	// other than offline) and status text ("" for none).
+	SetStatus(ctx context.Context, show, status string) error
+}

@@ -284,6 +284,7 @@ type Deps struct {
 	Editor          Editor
 	Blocker         Blocker
 	SpamReporter    SpamReporter
+	Status          StatusSetter
 	Members         MemberLister
 	Limiter         AttachmentLimiter
 	Outgoing        OutgoingMedia
@@ -332,6 +333,7 @@ type Deps struct {
 // stream and the user's focus and settings.
 func New(d Deps) (*Commands, *Ingest) {
 	events := &events{store: d.Store, out: d.Publisher}
+	buddies := newBuddyList()
 	state := &uiState{settings: DefaultSettings()}
 	retries := newRetrier(d.Store)
 	scheduled := newScheduledSender(d.Store)
@@ -340,6 +342,7 @@ func New(d Deps) (*Commands, *Ingest) {
 		store: d.Store, dispatcher: d.Dispatcher, signIn: d.SignIn, accounts: d.Accounts, history: d.History, media: d.Media, cache: d.Cache, refresher: d.Refresher, organizer: d.Organizer, archiveUnpinner: d.ArchiveUnpinner, reactor: d.Reactor, voter: d.Voter, deleter: d.Deleter, editor: d.Editor, blocker: d.Blocker, spamReporter: d.SpamReporter, members: d.Members, limiter: d.Limiter, fake: d.Fake,
 		outgoing: d.Outgoing, sounds: d.Sounds, clipboard: d.Clipboard, filePicker: d.FilePicker, opener: d.Opener, logger: d.Logger, spell: d.Spell, transcoder: d.Transcoder,
 		events: events, ui: state, refreshed: &attemptedRefresh{done: map[string]bool{}},
+		buddies: buddies, status: d.Status,
 		recentErrors:    &errorHistory{},
 		reminders:       newReminders(d.Store, d.Notifier, events, state),
 		retries:         retries,
@@ -373,6 +376,7 @@ func New(d Deps) (*Commands, *Ingest) {
 	ingest := &Ingest{
 		store: d.Store, notifier: d.Notifier, dispatcher: d.Dispatcher, events: events, ui: state,
 		outgoing: d.Outgoing, cache: d.Cache, logger: d.Logger, retries: retries, limiter: d.Limiter,
+		buddies: buddies,
 	}
 	commands.ingest = ingest
 

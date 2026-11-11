@@ -15,8 +15,8 @@ test('OWNERS covers exactly the actions in Keymap.BINDINGS', () => {
   assert.deepEqual(ownedActions, keymapActions);
 });
 
-test('OWNERS only names the ten controllers, or "panel" for the one action Panel.qml answers itself', () => {
-  const controllers = new Set(['list', 'conversation', 'composer', 'photoViewer', 'reactions', 'polls', 'delete', 'dialog', 'window', 'account', 'panel']);
+test('OWNERS only names the eleven controllers, or "panel" for the one action Panel.qml answers itself', () => {
+  const controllers = new Set(['list', 'conversation', 'composer', 'photoViewer', 'reactions', 'polls', 'delete', 'dialog', 'window', 'account', 'buddies', 'panel']);
 
   for (const [action, controller] of Object.entries(Actions.OWNERS)) {
     assert.ok(controllers.has(controller), `${action} is owned by unknown controller ${controller}`);

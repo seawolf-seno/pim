@@ -4,7 +4,8 @@
 // the one whose run(action) performs the whole effect, from ui/controllers.
 
 // OWNERS names the controller for each action: "list", "conversation",
-// "composer", "photoViewer", "reactions", "dialog", "account" or "window".
+// "composer", "photoViewer", "reactions", "dialog", "account", "window" or
+// "buddies".
 // A key bound in more than one context (for example chat.mute in both
 // "list" and "conversation") still has one owner, since the owning
 // controller reads whatever extra state it needs itself.
@@ -17,6 +18,7 @@ var OWNERS = {
   'rail.all': 'list',
   'rail.whatsapp': 'list',
   'rail.telegram': 'list',
+  'rail.xmpp': 'list',
   'rail.next': 'list',
   'rail.prev': 'list',
   'cursor.down': 'list',
@@ -233,7 +235,10 @@ var OWNERS = {
   // field.paste has no controller owner: Panel.routeKey pastes directly
   // into whichever field has focus. "panel" keeps it in the
   // exhaustiveness check below.
-  'field.paste': 'panel'
+  'field.paste': 'panel',
+
+  // BuddyController: the buddy list, from services with presence.
+  'buddies.toggle': 'buddies'
 };
 
 // owner returns the controller name that owns action, or "" if none does.

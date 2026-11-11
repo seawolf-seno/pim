@@ -24,6 +24,7 @@ const (
 	EventScheduledRemoved    = "scheduledMessage.removed"
 	EventNotificationSound   = "notification.sound"
 	EventAccountNotice       = "account.notice"
+	EventBuddyUpdated        = "buddy.updated"
 )
 
 // ScheduledRemoved is the data of a scheduledMessage.removed event, naming the

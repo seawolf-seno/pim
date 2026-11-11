@@ -8,9 +8,11 @@ Item {
 
   property string service: ""
   readonly property string text: root.service === "whatsapp" ? ""
-    : root.service === "telegram" ? "" : ""
+    : root.service === "telegram" ? ""
+    : root.service === "xmpp" ? "" : ""
   readonly property string label: root.service === "whatsapp" ? "WhatsApp"
-    : root.service === "telegram" ? "Telegram" : "Messages"
+    : root.service === "telegram" ? "Telegram"
+    : root.service === "xmpp" ? "XMPP" : "Messages"
 
   implicitWidth: glyph.implicitWidth
   implicitHeight: glyph.implicitHeight

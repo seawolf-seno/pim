@@ -160,11 +160,13 @@ func (f *fakeLink) sentContaining(parts ...string) []string {
 // running is a connector signed in over a fake link, inside a synctest
 // bubble, with what it reported recorded in sink.
 type running struct {
-	c      *Connector
-	link   *fakeLink
-	sink   *connectortest.Sink
-	cancel context.CancelFunc
-	done   chan error
+	c       *Connector
+	link    *fakeLink
+	sink    *connectortest.Sink
+	buddies *buddySink
+	cancel  context.CancelFunc
+	done    chan error
+	stopped sync.Once
 }
 
 // startConnector saves settings for testAccount, runs a connector over
@@ -181,7 +183,8 @@ func startConnector(t *testing.T, fl *fakeLink) *running {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	r := &running{c: c, link: fl, sink: &connectortest.Sink{}, cancel: cancel, done: make(chan error, 1)}
-	go func() { r.done <- c.Run(ctx, r.sink) }()
+	r.buddies = &buddySink{Sink: r.sink, latest: map[string]domain.Buddy{}}
+	go func() { r.done <- c.Run(ctx, r.buddies) }()
 	synctest.Wait()
 	t.Cleanup(r.stop)
 
@@ -194,14 +197,54 @@ func (r *running) push(raw string) {
 	synctest.Wait()
 }
 
-// stop cancels the run and waits for Run to return.
+// stop cancels the run and waits for Run to return. It is safe to call
+// again: a test may stop the run itself before the cleanup does.
 func (r *running) stop() {
-	r.cancel()
-	<-r.done
+	r.stopped.Do(func() {
+		r.cancel()
+		<-r.done
+	})
 }
 
 // selfPresence is the room's presence telling the account its nickname.
 func selfPresence(room, nick string) string {
 	return `<presence from="` + room + `/` + nick + `"><x xmlns="` + nsMUCUser + `">` +
 		`<status code="110"/><status code="210"/></x></presence>`
+}
+
+// buddySink is the recording Sink plus a buddy list, as the helper's own
+// Ingest keeps one: the latest report per buddy, and how many arrived.
+type buddySink struct {
+	*connectortest.Sink
+
+	mu      sync.Mutex
+	latest  map[string]domain.Buddy
+	reports int
+}
+
+// Buddy records b as its buddy's latest state.
+func (s *buddySink) Buddy(_ context.Context, b domain.Buddy) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.latest[b.RemoteID] = b
+	s.reports++
+}
+
+// buddy returns the latest report for address.
+func (s *buddySink) buddy(address string) (domain.Buddy, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	b, ok := s.latest[address]
+
+	return b, ok
+}
+
+// count returns how many buddy reports arrived.
+func (s *buddySink) count() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.reports
 }
