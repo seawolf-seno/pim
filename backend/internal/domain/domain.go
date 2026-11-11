@@ -9,6 +9,7 @@ import "errors"
 const (
 	ServiceWhatsApp = "whatsapp"
 	ServiceTelegram = "telegram"
+	ServiceXMPP     = "xmpp"
 )
 
 // Account connection states.
