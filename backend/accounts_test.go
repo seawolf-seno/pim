@@ -10,6 +10,7 @@ import (
 
 	"github.com/timlittle/omamessenger/backend/internal/app"
 	"github.com/timlittle/omamessenger/backend/internal/connector"
+	"github.com/timlittle/omamessenger/backend/internal/connector/xmpp"
 	"github.com/timlittle/omamessenger/backend/internal/domain"
 	"github.com/timlittle/omamessenger/backend/internal/store"
 )
@@ -167,6 +168,39 @@ func TestAccountRegistry_AddsAndRemovesAnAccount(t *testing.T) {
 
 	if _, err := r.db.Account(t.Context(), account.ID); !errors.Is(err, domain.ErrNotFound) {
 		t.Errorf("account kept after removal: %v", err)
+	}
+}
+
+// TestAccountRegistry_AddsAnXMPPAccount adds an account through the real
+// XMPP provider and store: the store once refused any service but WhatsApp
+// and Telegram, which only adding an account through the registry shows.
+// The server is unreachable, so the connector just keeps retrying.
+func TestAccountRegistry_AddsAnXMPPAccount(t *testing.T) {
+	t.Parallel()
+
+	db, err := store.Open(t.Context(), filepath.Join(t.TempDir(), "messages.db"), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() }) // nothing to report once the test is over
+
+	r := newAccountRegistry(db, t.TempDir(), []connector.Provider{xmpp.Provider{}})
+	startManager(t, r)
+
+	account, err := r.Add(t.Context(), app.NewAccount{Service: domain.ServiceXMPP, Options: map[string]string{
+		"address": "rteague29@pim.test", "password": "pim-dev", "server": "127.0.0.1:1",
+	}})
+	if err != nil {
+		t.Fatalf("Add = %v", err)
+	}
+
+	saved, err := r.db.Account(t.Context(), account.ID)
+	if err != nil || saved.Service != domain.ServiceXMPP || saved.Name != "XMPP" {
+		t.Errorf("saved account = %+v, %v", saved, err)
+	}
+	again, err := r.saved(t.Context())
+	if err != nil || len(again) != 1 || again[0].Account().ID != account.ID {
+		t.Errorf("saved() after a restart = %d connectors, %v", len(again), err)
 	}
 }
 

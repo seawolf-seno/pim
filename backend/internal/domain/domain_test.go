@@ -15,6 +15,7 @@ func TestValidService(t *testing.T) {
 	}{
 		{domain.ServiceWhatsApp, true},
 		{domain.ServiceTelegram, true},
+		{domain.ServiceXMPP, true},
 		{"", false},
 		{"signal", false},
 		{"WhatsApp", false},
