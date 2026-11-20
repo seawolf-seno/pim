@@ -187,6 +187,7 @@ var BINDINGS = [
   { action: 'setup.accept', keys: ['Enter'], contexts: ['chooseService'], label: 'Choose the highlighted service', hint: true },
   { action: 'setup.chooseTelegram', keys: ['t'], contexts: ['chooseService'], label: 'Choose Telegram', hint: true },
   { action: 'setup.chooseWhatsapp', keys: ['w'], contexts: ['chooseService'], label: 'Choose WhatsApp', hint: true },
+  { action: 'setup.chooseXmpp', keys: ['x'], contexts: ['chooseService'], label: 'Choose XMPP', hint: true },
 
   // The QR and phone steps can switch to each other without starting over.
   { action: 'qr.usePhone', keys: ['p'], contexts: ['qr'], label: 'Use phone number instead', hint: true },

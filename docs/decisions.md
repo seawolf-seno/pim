@@ -2459,3 +2459,11 @@ XMPP accounts (a school's own server) carry presence: who is online, away or bus
 **The buddy controller borrows the list's keys while it shows.** `BuddyController` is asked first by the panel's key router: it always owns `buddies.toggle`, and owns the list's cursor and open actions (j/k, g/G, Enter) only while the buddy list is showing, so the conversation list's controller never moves a cursor nobody can see. Opening a buddy calls `conversations.open`, exactly as the new-chat dialog does.
 
 **Not built yet:** a command to set your own away message from the UI (the helper's `presence.set` exists); a school server may override it anyway, showing a whole class away while it is in session.
+
+## XMPP: signing in from a form
+
+An XMPP account needs an address and password, and sometimes a server and a certificate file, before anything can connect, so choosing XMPP opens a form (`ServerAccountForm.qml`, the `server` setup stage) instead of adding the account at once the way Telegram and WhatsApp do. Which services open a form is one list in `ui/lib/Setup.js` (`FORM_SERVICES`), which also checks the form before sending it, matching what the helper's own `settingsFrom` accepts, so a typo is caught without a round trip.
+
+**A failed sign-in goes back to the form.** The helper reports a refused password as `needs-auth` and an unreachable server as `error`; while setup is open for that account, either one shows the form again with what was typed and a fixed sentence (`Setup.serverFailure`), since the helper's own detail for `needs-auth` tells someone to remove and re-add the account, which the form now does for them: sending it again removes the earlier try before adding the corrected one. The helper's settings are only written by `accounts.add`, so replacing the account is the one way to change them.
+
+**The fields live only while shown,** like every other setup field: AccountSetup keeps the drafts and destroys the form whenever the window is inactive, so a hidden field never reads a clipboard offer.

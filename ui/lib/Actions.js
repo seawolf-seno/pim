@@ -162,6 +162,7 @@ var OWNERS = {
   'setup.accept': 'account',
   'setup.chooseTelegram': 'account',
   'setup.chooseWhatsapp': 'account',
+  'setup.chooseXmpp': 'account',
   'qr.usePhone': 'account',
   'phone.useQr': 'account',
   'phone.back': 'account',

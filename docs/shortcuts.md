@@ -151,13 +151,13 @@ Misspelled English words are underlined as you type (the "Spell check" plugin se
 
 ## Adding an account
 
-The service chooser, shown when more than one service is offered, and the QR and phone steps all work without the mouse or Tab.
+The service chooser, shown when more than one service is offered, and the QR and phone steps all work without the mouse or Tab. An XMPP (school server) account opens a form instead: Tab moves between its fields and Enter in any field continues.
 
 | Keys | Does |
 | --- | --- |
 | j / k, ↓ / ↑ | Move the highlighted service |
 | Enter | Choose the highlighted service |
-| t / w | Jump straight to Telegram / WhatsApp |
+| t / w / x | Jump straight to Telegram / WhatsApp / XMPP |
 | p | At the QR step, use a phone number instead |
 | q | At the phone step, go back to the QR code |
 | Esc | At the phone step, back to the QR code; anywhere else, cancel setup |

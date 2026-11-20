@@ -15,11 +15,13 @@ import "../lib/Paste.js" as Paste
 // number, login code and two-step password. The chooser takes j/k,
 // Up/Down or a mnemonic letter; Enter chooses the highlight, Escape
 // cancels. The QR and phone steps can switch to each other with p or q.
+// A school server (XMPP) account asks for its address and password in a
+// form instead.
 Item {
   id: root
 
-  // stage is the step shown: chooseService, credentials, waiting, qr,
-  // phone, code or password.
+  // stage is the step shown: chooseService, credentials, server, waiting,
+  // qr, phone, code or password.
   property string stage: "credentials"
   // services lists the services to pick from at the chooseService step.
   property var services: []
@@ -51,6 +53,8 @@ Item {
   // _apiIdDraft and _apiHashDraft keep the typed credentials while their fields are destroyed.
   property string _apiIdDraft: ""
   property string _apiHashDraft: ""
+  // _serverDrafts keeps the school server form's typed fields, by name, while the form is destroyed.
+  property var _serverDrafts: ({ address: "", password: "", server: "", caFile: "" })
   // _answerDraft keeps the typed phone, code or password; each new step starts it empty.
   property string _answerDraft: ""
   // _focusedField names the field to refocus when the window becomes active again.
@@ -60,6 +64,8 @@ Item {
   signal serviceChosen(string serviceId)
   // credentialsSubmitted reports the API id and hash typed in.
   signal credentialsSubmitted(string apiId, string apiHash)
+  // serverAccountSubmitted reports the school server form as typed.
+  signal serverAccountSubmitted(string address, string password, string server, string caFile)
   // phoneRequested asks to sign in by phone number instead of QR code.
   signal phoneRequested()
   // qrRequested asks to go back to the QR code already shown, from the
@@ -83,14 +89,19 @@ Item {
 
   // _credentials is the credentials fields, or null when not shown; a var because Loader.item is untyped.
   property var _credentials: credentialsLoader.item
+  // _serverForm is the school server form, or null when not shown.
+  property var _serverForm: serverLoader.item
   // _answer is the answer field, or null when not shown.
   property var _answer: answerLoader.item
 
   // submit continues from the current step with the typed drafts.
   function submit(): void {
     if (root.busy) return;
+    const d = root._serverDrafts;
     if (root.stage === "credentials" && root._credentials) {
       root.credentialsSubmitted(root._apiIdDraft, root._apiHashDraft);
+    } else if (root.stage === "server" && root._serverForm) {
+      root.serverAccountSubmitted(d.address, d.password, d.server, d.caFile);
     } else if (root._field && root._answer) {
       root.answered(root._answerDraft);
     }
@@ -103,6 +114,7 @@ Item {
   // button of their own. Callers defer it so the Loaders have updated first.
   function _focusStep(): void {
     if (root.stage === "credentials") { if (root._credentials) root._credentials.idField.forceActiveFocus(); return; }
+    if (root.stage === "server") { if (root._serverForm) root._serverForm.focusField(""); return; }
     if (root._field) {
       root._answerDraft = "";
       if (root._answer) { root._answer.text = ""; root._answer.forceActiveFocus(); }
@@ -116,6 +128,7 @@ Item {
     if (root._focusedField === "apiId" && root._credentials) root._credentials.idField.forceActiveFocus();
     else if (root._focusedField === "apiHash" && root._credentials) root._credentials.hashField.forceActiveFocus();
     else if (root._focusedField === "answer" && root._answer) root._answer.forceActiveFocus();
+    else if (root._focusedField.startsWith("server.") && root._serverForm) root._serverForm.focusField(root._focusedField.slice(7));
   }
 
   objectName: "accountSetup"
@@ -148,7 +161,7 @@ Item {
 
       Text {
         text: root.stage === "chooseService" ? "Add an account"
-          : root.stage === "credentials" ? "Add a " + root.serviceName + " account"
+          : root.stage === "credentials" || root.stage === "server" ? "Add a " + root.serviceName + " account"
           : "Sign in to " + root.serviceName
         textFormat: Text.PlainText
         color: Theme.foreground
@@ -161,6 +174,8 @@ Item {
         text: root.stage === "chooseService" ? "Choose which service to add an account for: j/k or a letter, Enter to choose."
           : root.stage === "credentials"
           ? "To use your own Telegram app instead of OmaMessenger's, sign in at <a href=\"https://my.telegram.org/apps\">my.telegram.org</a>, open API development tools, and copy the app's api_id and api_hash here. They stay on this computer."
+          : root.stage === "server"
+          ? "Sign in with your school chat address and password. Fill in the server only when it differs from the part after @, and a certificate file only for a server with its own certificate. They stay on this computer."
           : root.stage === "waiting" ? "Connecting to " + root.serviceName + "…" : root.hint
         visible: text !== ""
         // StyledText is safe here because every branch, including
@@ -283,6 +298,29 @@ Item {
         }
       }
 
+      // The school server form, destroyed when not in use like the credentials.
+      Loader {
+        id: serverLoader
+        Layout.fillWidth: true
+        active: root.stage === "server" && root.windowActive
+
+        sourceComponent: ServerAccountForm {
+          address: root._serverDrafts.address
+          password: root._serverDrafts.password
+          server: root._serverDrafts.server
+          caFile: root._serverDrafts.caFile
+          routeKey: root.routeKey
+
+          onEdited: (field, text) => { root._serverDrafts[field] = text; }
+          onSubmitted: root.submit()
+          // A blur from the window going inactive keeps _focusedField for restoring.
+          onFocused: field => {
+            if (field !== "") root._focusedField = "server." + field;
+            else if (root.windowActive) root._focusedField = "";
+          }
+        }
+      }
+
       Image {
         objectName: "qrImage"
         Layout.alignment: Qt.AlignHCenter
@@ -383,7 +421,7 @@ Item {
 
         Ui.Button {
           objectName: "continueButton"
-          visible: root.stage === "credentials" || root._field !== null
+          visible: root.stage === "credentials" || root.stage === "server" || root._field !== null
           enabled: !root.busy
           text: "Continue"
           focusable: true

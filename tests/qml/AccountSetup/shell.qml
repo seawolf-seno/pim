@@ -15,6 +15,11 @@
 // j then y, and cancelling a removal with n; and that typing letters
 // into a field (even ones that are mnemonics elsewhere) only ever types,
 // never fires a shortcut. No helper runs, so nothing reaches Telegram.
+//
+// A school server (XMPP) account opens its address and password form
+// instead of adding at once, sends the form as accounts.add options, goes
+// back to the form with what was typed when the server refuses it, and
+// replaces that first try when the corrected form is sent.
 import QtQuick
 import QtTest
 import Quickshell
@@ -107,6 +112,7 @@ ShellRoot {
 
       onServiceChosen: serviceId => controller.chooseService(serviceId)
       onCredentialsSubmitted: (apiId, apiHash) => controller.submitCredentials(apiId, apiHash)
+      onServerAccountSubmitted: (address, password, server, caFile) => controller.submitServerAccount(address, password, server, caFile)
       onPhoneRequested: controller.usePhone()
       onQrRequested: controller.useQr()
       onAnswered: value => controller.answer(value)
@@ -154,6 +160,8 @@ ShellRoot {
     if (!root.checkResumesPendingStep()) return;
     if (!root.checkRemovesAnAccount()) return;
     if (!root.checkChoosesAServiceWhenThereAreSeveral()) return;
+    if (!root.checkSignsInToASchoolServer()) return;
+    if (!root.checkSchoolServerRetriesAfterARefusal()) return;
 
     stepper.attempts = 0;
     root.beginKeyboardChecks();
@@ -406,6 +414,63 @@ ShellRoot {
   function anyFocused(): bool {
     return view.activeFocus || (Check.find(view, "apiIdField")?.activeFocus ?? false)
       || (Check.find(view, "answerField")?.activeFocus ?? false);
+  }
+
+  // typeServerForm fills the school server form's fields by name.
+  function typeServerForm(fields: var): void {
+    const names = { address: "serverAddressField", password: "serverPasswordField", server: "serverHostField", caFile: "serverCAFileField" };
+    for (const name in fields) Check.find(view, names[name]).text = fields[name];
+  }
+
+  // checkSignsInToASchoolServer chooses XMPP with its letter, refuses an
+  // incomplete form without sending anything, then sends the form.
+  function checkSignsInToASchoolServer(): bool {
+    service.services = [{ id: "telegram", name: "Telegram" }, { id: "xmpp", name: "XMPP" }];
+    service.requests = [];
+
+    controller.run("account.add");
+    controller.run("setup.chooseXmpp");
+    if (controller.stage !== "server") return Check.fail("choosing XMPP showed " + controller.stage + ", not the server form");
+    if (service.requests.length !== 0) return Check.fail("choosing XMPP sent " + JSON.stringify(service.requests));
+    if (!Check.find(view, "serverAddressField")) return Check.fail("the server form has no address field");
+
+    root.typeServerForm({ address: "rteague29", password: "pim-dev" });
+    view.submit();
+    if (service.requests.length !== 0 || !controller.lastError) return Check.fail("an address with no domain was sent");
+
+    root.typeServerForm({ address: "rteague29@pim.test", server: "192.168.1.20" });
+    view.submit();
+    const sent = root.last();
+    const expected = { service: "xmpp", options: { address: "rteague29@pim.test", password: "pim-dev", server: "192.168.1.20" } };
+    if (sent.method !== "accounts.add" || JSON.stringify(sent.params) !== JSON.stringify(expected)) {
+      return Check.fail("accounts.add sent " + JSON.stringify(sent));
+    }
+    if (controller.stage !== "waiting") return Check.fail("not waiting after sending the form: " + controller.stage);
+    return true;
+  }
+
+  // checkSchoolServerRetriesAfterARefusal goes back to the form when the
+  // server refuses the password, keeping what was typed, then removes
+  // that try before adding the corrected one, and closes once connected.
+  function checkSchoolServerRetriesAfterARefusal(): bool {
+    service.event("account.updated", { id: "tg-1", status: "needs-auth" });
+    if (controller.stage !== "server" || !controller.lastError) return Check.fail("a refused password did not go back to the form");
+    if (Check.find(view, "serverAddressField").text !== "rteague29@pim.test") return Check.fail("the form lost the address typed");
+
+    service.requests = [];
+    root.typeServerForm({ password: "right" });
+    view.submit();
+    const methods = service.requests.map((r) => r.method).join(",");
+    if (methods !== "accounts.remove,accounts.add") return Check.fail("retrying sent " + methods);
+    if (service.requests[0].params.accountId !== "tg-1") return Check.fail("retrying removed " + JSON.stringify(service.requests[0].params));
+    if (service.requests[1].params.options.password !== "right") return Check.fail("retrying did not send the corrected password");
+
+    service.event("account.updated", { id: "tg-1", status: "connected" });
+    if (controller.open) return Check.fail("setup stayed open once the school server account connected");
+
+    service.services = [];
+    service.requests = [];
+    return true;
   }
 
   // beginKeyboardChecks opens the service chooser with two services and

@@ -146,6 +146,7 @@ const cases = [
   ['chooseService', KEY.Return, 0, '\r', 'setup.accept'],
   ['chooseService', letter('t'), 0, 't', 'setup.chooseTelegram'],
   ['chooseService', letter('w'), 0, 'w', 'setup.chooseWhatsapp'],
+  ['chooseService', letter('x'), 0, 'x', 'setup.chooseXmpp'],
   ['chooseService', KEY.Escape, 0, '', 'escape'],
 
   ['qr', letter('p'), 0, 'p', 'qr.usePhone'],

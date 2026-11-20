@@ -28,5 +28,13 @@ var API_HASH = 64;
 // two-step password fields the current sign-in step is showing.
 var SETUP_ANSWER = 128;
 
+// SERVER_FIELD bounds the school server form's address, password and
+// server fields: an address or host name, never anywhere near this long.
+var SERVER_FIELD = 1024;
+
+// FILE_PATH bounds the school server form's certificate file field, a
+// full path, which Linux caps at 4096 bytes.
+var FILE_PATH = 4096;
+
 // ACCOUNT_ALIAS bounds an account's own display name.
 var ACCOUNT_ALIAS = 64;

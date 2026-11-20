@@ -6,7 +6,8 @@ import "../lib/Setup.js" as Setup
 
 // Owns account setup: choosing a service when the helper offers more than
 // one, adding an account with OmaMessenger's own app keys (or, for
-// Telegram, the user's own from my.telegram.org), then answering the
+// Telegram, the user's own from my.telegram.org; for a school server, its
+// address and password from a form), then answering the
 // sign-in steps its connector asks for until it connects. The only
 // controller that calls accounts.add, accounts.remove and auth.submit. A
 // sign-in step for a saved account whose session ran out opens setup too,
@@ -22,8 +23,8 @@ Item {
   // open shows account setup.
   property bool open: false
 
-  // stage is what setup shows: chooseService, credentials, waiting, qr,
-  // phone, code or password.
+  // stage is what setup shows: chooseService, credentials, server,
+  // waiting, qr, phone, code or password.
   property string stage: "credentials"
 
   // chosenService is the service the account being set up belongs to,
@@ -108,6 +109,7 @@ Item {
       "setup.accept": () => root._acceptChoose(),
       "setup.chooseTelegram": () => root._chooseById("telegram"),
       "setup.chooseWhatsapp": () => root._chooseById("whatsapp"),
+      "setup.chooseXmpp": () => root._chooseById("xmpp"),
       "qr.usePhone": () => root.usePhone(),
       "phone.useQr": () => root.useQr(),
       "phone.back": () => (root.qr ? root.useQr() : root.cancel()),
@@ -292,13 +294,14 @@ Item {
   }
 
   // _beginService adds an account for serviceId with OmaMessenger's own
-  // keys and waits for its first sign-in step.
+  // keys and waits for its first sign-in step, or, for a service signed
+  // into with an address and password, shows the form for them first.
   function _beginService(serviceId: string): void {
     root._reset();
     root.chosenService = serviceId;
     root.open = true;
-    root.stage = "waiting";
-    root._add({ service: serviceId });
+    root.stage = Setup.firstStage(serviceId);
+    if (root.stage === "waiting") root._add({ service: serviceId });
   }
 
   // beginWithOwnKeys opens setup at the credentials step, for someone who
@@ -321,13 +324,35 @@ Item {
     root._add({ service: "telegram", apiId: Setup.apiID(apiId), apiHash: apiHash.trim() });
   }
 
+  // submitServerAccount adds a school server account with what the form
+  // holds. An earlier try from this same form that did not sign in is
+  // removed first, so a corrected password does not leave it behind.
+  function submitServerAccount(address: string, password: string, server: string, caFile: string): void {
+    const checked = Setup.serverAccount(address, password, server, caFile);
+    if (!checked.options) {
+      root.lastError = checked.error;
+      return;
+    }
+
+    const params = { service: root.chosenService, options: checked.options };
+    if (!root._added) {
+      root._add(params);
+      return;
+    }
+
+    const earlier = root.accountId;
+    root._added = false;
+    root.accountId = "";
+    root._call("accounts.remove", { accountId: earlier }, () => root._add(params));
+  }
+
   // _add asks the helper to add the account, then waits for its first
   // sign-in step unless one has already arrived.
   function _add(params: var): void {
     root._call("accounts.add", params, (account) => {
       root.accountId = account.id;
       root._added = true;
-      if (root.stage === "credentials") root.stage = "waiting";
+      if (root.stage === "credentials" || root.stage === "server") root.stage = "waiting";
     });
   }
 
@@ -408,12 +433,18 @@ Item {
   }
 
   // _accountUpdated closes setup once the account connects, and shows why
-  // when it fails.
+  // when it fails. A school server account that fails goes back to its
+  // form, with what was typed, to correct and try again.
   function _accountUpdated(account: var): void {
     if (!root.open || account.id !== root.accountId) return;
 
+    const serverFailure = Setup.firstStage(root.chosenService) === "server" ? Setup.serverFailure(account.status) : "";
     if (account.status === "connected") {
       root._close();
+    } else if (serverFailure !== "") {
+      root.stage = "server";
+      root.lastError = serverFailure;
+      root.busy = false;
     } else if (account.status === "error") {
       root.lastError = account.detail || "Telegram could not connect.";
       root.busy = false;

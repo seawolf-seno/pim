@@ -59,6 +59,12 @@ To sign in with your own Telegram API keys instead of OmaMessenger's, see [docs/
 
 Choose **Add an account** in the window or the command palette. Scan the QR code shown with WhatsApp (**Settings → Linked devices → Link a device**), or choose **Use phone number instead** and type the 8-character code it shows into WhatsApp. Recent chats sync once it connects; scrolling back further asks your phone for more, so it needs to be online and reachable. If it is not, a note says so at the top of the conversation — try again once it is.
 
+## Sign in to a school chat server (XMPP)
+
+Choose **Add an account**, then **XMPP** (or press `x`). Enter your address (`name@school.org`) and password. Fill in **Server** only when the server's host name or IP address differs from the part after `@`, for example `192.168.1.20` for a server on your local network. Fill in **Certificate file** only when the server uses its own certificate rather than a public one: the full path to its `.crt` file, such as the one the pim-server development server makes. If the server refuses the password or can't be reached, the form comes back with what you typed so you can fix it. Text messages only for now; the buddy list (**Ctrl+B**) shows who is online.
+
+To try it with two computers, see [docs/two-computer-test.md](docs/two-computer-test.md).
+
 ## Keyboard shortcuts
 
 | Keys | Does |

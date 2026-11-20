@@ -273,6 +273,7 @@ Item {
 
       onServiceChosen: serviceId => root.accountController.chooseService(serviceId)
       onCredentialsSubmitted: (apiId, apiHash) => root.accountController.submitCredentials(apiId, apiHash)
+      onServerAccountSubmitted: (address, password, server, caFile) => root.accountController.submitServerAccount(address, password, server, caFile)
       onPhoneRequested: root.accountController.usePhone()
       onQrRequested: root.accountController.useQr()
       onAnswered: value => root.accountController.answer(value)
