@@ -22,16 +22,19 @@ cd ~/Projects/pim-server
 PIM_FAKE_NOW="2026-11-09 10:00" bin/pim-dev up   # Monday 10:00, so class time applies
 ```
 
-The development server listens on `127.0.0.1` only, so computer B can't reach it yet.
-pim-server needs a change for that (asked of pim-server, below). Until then, forward the
-port from computer B over SSH, if computer A runs `sshd`:
+Listen on computer A's network address (`ip -4 addr` shows it) and open the port in its
+firewall (Omarchy turns ufw on):
 
 ```sh
-# on computer B; leave it running
-ssh -N -L 5222:127.0.0.1:5222 <user>@<computer-A-address>
+PIM_FAKE_NOW="2026-11-09 10:00" PIM_LISTEN=<computer-A-address> bin/pim-dev up
+sudo ufw allow from 192.168.0.0/16 to any port 5222 proto tcp
 ```
 
-Copy the server's certificate to computer B, for example to `~/pim.test.crt`:
+Anyone who can reach the port can sign in with the dev password, so do this on a network
+you trust, not school or public Wi-Fi.
+
+Copy the server's certificate to computer B, for example to `~/pim.test.crt` (with `scp`
+or a USB stick):
 
 ```sh
 scp <user>@<computer-A-address>:Projects/pim-server/.dev/certs/pim.test.crt ~/pim.test.crt
@@ -42,11 +45,11 @@ scp <user>@<computer-A-address>:Projects/pim-server/.dev/certs/pim.test.crt ~/pi
 Pick two fictional people from `pim-server/fixtures/school/school.toml`; the password for
 every development account is `pim-dev`. In pim choose **Add an account → XMPP**:
 
-| Field | Computer A | Computer B (with the SSH forward) |
+| Field | Computer A | Computer B |
 | --- | --- | --- |
 | Address | the first person, `…@pim.test` | the second person, `…@pim.test` |
 | Password | `pim-dev` | `pim-dev` |
-| Server | `127.0.0.1` | `127.0.0.1` |
+| Server | `127.0.0.1` | computer A's address |
 | Certificate file | `/home/<you>/Projects/pim-server/.dev/certs/pim.test.crt` | `/home/<you>/pim.test.crt` |
 
 The certificate is made for the name `pim.test`, which pim checks no matter which address
@@ -65,8 +68,8 @@ it connects to, so `127.0.0.1` or a LAN address both work.
 Text only (no attachments), no read markers, and no command in pim to set your own away
 message.
 
-## Asked of pim-server
+## If computer B can't connect
 
-`server/dev/prosody.cfg.lua.in` sets `interfaces = { "127.0.0.1" }`. An option such as
-`PIM_LISTEN=0.0.0.0 bin/pim-dev up` (or the computer's LAN address) would let computer B
-connect directly with **Server** set to computer A's address, with no SSH forward.
+The form says it couldn't connect to the server. Check, on computer B:
+`nc -zv <computer-A-address> 5222`. If that fails, the server isn't listening on that
+address (`ss -ltn | grep 5222` on computer A) or the firewall on A is blocking the port.
